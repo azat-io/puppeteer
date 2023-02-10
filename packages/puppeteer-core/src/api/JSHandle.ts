@@ -15,6 +15,7 @@
  */
 
 import Protocol from 'devtools-protocol';
+import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 import {ElementHandle} from './ElementHandle.js';
 import {EvaluateFunc, HandleFor, HandleOr} from '../common/types.js';
 import {ExecutionContext} from '../common/ExecutionContext.js';
@@ -64,14 +65,14 @@ export class JSHandle<T = unknown> {
   /**
    * @internal
    */
-  executionContext(): ExecutionContext {
+  executionContext(): ExecutionContext | any {
     throw new Error('Not implemented');
   }
 
   /**
    * @internal
    */
-  get client(): CDPSession {
+  get client(): CDPSession | any {
     throw new Error('Not implemented');
   }
 
@@ -192,10 +193,22 @@ export class JSHandle<T = unknown> {
   }
 
   /**
+   * @internal
+   */
+  get id(): string | undefined {
+    throw new Error('Not implemented');
+  }
+
+  /**
    * Provides access to the
    * [Protocol.Runtime.RemoteObject](https://chromedevtools.github.io/devtools-protocol/tot/Runtime/#type-RemoteObject)
+   * OR
+   * [Bidi.Script.RemoteReference](https://w3c.github.io/webdriver-bidi/#data-types-reference)
+   * backing this handle.
    */
-  remoteObject(): Protocol.Runtime.RemoteObject {
+  remoteObject():
+    | Protocol.Runtime.RemoteObject
+    | Bidi.CommonDataTypes.RemoteValue {
     throw new Error('Not implemented');
   }
 }

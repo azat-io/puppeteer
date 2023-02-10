@@ -558,13 +558,13 @@
     "expectations": ["SKIP"]
   },
   {
-    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.click should work",
+    "testIdPattern": "[elementhandle.spec] ElementHandle ElementHandle.click should work",
     "platforms": ["darwin", "win32"],
     "parameters": ["firefox"],
     "expectations": ["SKIP"]
   },
   {
-    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.click should work",
+    "testIdPattern": "[elementhandle.spec] ElementHandle ElementHandle.click should work",
     "platforms": ["linux"],
     "parameters": ["firefox"],
     "expectations": ["FAIL"]
@@ -3166,5 +3166,41 @@
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["webDriverBiDi"],
     "expectations": ["SKIP"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec]",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["PASS"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.jsonValue should not work with dates",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["FAIL"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.asElement should work",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["FAIL"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.asElement should return ElementHandle for TextNodes",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["FAIL"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.toString should work for complicated objects",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["FAIL"]
+  },
+  {
+    "testIdPattern": "[jshandle.spec] JSHandle JSHandle.toString should work with different subtypes",
+    "platforms": ["darwin", "linux", "win32"],
+    "parameters": ["webDriverBiDi"],
+    "expectations": ["FAIL"]
   }
 ]

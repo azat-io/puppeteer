@@ -1,5 +1,6 @@
 import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
 import {debugError, isDate, isPlainObject, isRegExp} from '../util.js';
+import {JSHandle} from './JSHandle.js';
 
 /**
  * @internal
@@ -46,6 +47,18 @@ export class BidiSerializer {
         value: parsedArray,
       };
     } else if (isPlainObject(arg)) {
+      try {
+        JSON.stringify(arg);
+      } catch (error) {
+        if (
+          error instanceof TypeError &&
+          error.message.startsWith('Converting circular structure to JSON')
+        ) {
+          error.message += ' Recursive objects are not allowed.';
+        }
+        throw error;
+      }
+
       const parsedObject: Bidi.CommonDataTypes.MappingLocalValue = [];
       for (const key in arg) {
         parsedObject.push([
@@ -114,6 +127,20 @@ export class BidiSerializer {
 
   static serialize(arg: unknown): Bidi.CommonDataTypes.LocalOrRemoteValue {
     // TODO: See use case of LazyArgs
+    const objectHandle = arg && arg instanceof JSHandle ? arg : null;
+    if (objectHandle) {
+      // TODO:
+      // if (objectHandle.executionContext() !== this) {
+      //   throw new Error(
+      //     'JSHandles can be evaluated only in the context they were created!'
+      //   );
+      // }
+      if (objectHandle.disposed) {
+        throw new Error('JSHandle is disposed!');
+      }
+      return objectHandle.remoteObject();
+    }
+
     return BidiSerializer.serializeRemoveValue(arg);
   }
 
@@ -202,7 +229,7 @@ export class BidiSerializer {
     return {key, value};
   }
 
-  static deserialize(result: Bidi.CommonDataTypes.RemoteValue): unknown {
+  static deserialize(result: Bidi.CommonDataTypes.RemoteValue): any {
     if (!result) {
       debugError('Service did not produce a result.');
       return undefined;
