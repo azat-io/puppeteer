@@ -15,31 +15,80 @@
  */
 
 import {ElementHandle} from '../api/ElementHandle.js';
-import {IterableUtil} from './IterableUtil.js';
-import {PQueryEngine} from './PQueryEngine.js';
-import {QueryHandler} from './QueryHandler.js';
-import {AwaitableIterable} from './types.js';
+import type {Page} from '../api/Page.js';
+import {ARIAQueryHandler} from './AriaQueryHandler.js';
+import {customQueryHandlers} from './CustomQueryHandler.js';
+import type {Frame} from './Frame.js';
+import type {WaitForSelectorOptions} from './IsolatedWorld.js';
+import {QueryHandler, QuerySelector, QuerySelectorAll} from './QueryHandler.js';
+import type {AwaitableIterable} from './types.js';
+
+const noop = () => {};
 
 /**
  * @internal
  */
 export class PQueryHandler extends QueryHandler {
+  static override querySelectorAll: QuerySelectorAll = (
+    element,
+    selector,
+    {pQuerySelectorAll}
+  ) => {
+    return pQuerySelectorAll(element, selector);
+  };
+  static override querySelector: QuerySelector = (
+    element,
+    selector,
+    {pQuerySelector}
+  ) => {
+    return pQuerySelector(element, selector);
+  };
+
   static override async *queryAll(
     element: ElementHandle<Node>,
     selector: string
   ): AwaitableIterable<ElementHandle<Node>> {
-    const query = new PQueryEngine(element, selector);
-    await query.run();
-    const world = element.executionContext()._world!;
-    yield* IterableUtil.map(query.elements, element => {
-      return world.transferHandle(element);
-    });
+    await this.#prepare(element.frame.page());
+    yield* super.queryAll(element, selector);
   }
-
   static override async queryOne(
     element: ElementHandle<Node>,
     selector: string
   ): Promise<ElementHandle<Node> | null> {
-    return (await IterableUtil.first(this.queryAll(element, selector))) ?? null;
+    await this.#prepare(element.frame.page());
+    return super.queryOne(element, selector);
+  }
+  static override async waitFor(
+    elementOrFrame: ElementHandle<Node> | Frame,
+    selector: string,
+    options: WaitForSelectorOptions
+  ): Promise<ElementHandle<Node> | null> {
+    if (!(elementOrFrame instanceof ElementHandle)) {
+      await this.#prepare(elementOrFrame.page());
+    } else {
+      await this.#prepare(elementOrFrame.frame.page());
+    }
+    return super.waitFor(elementOrFrame, selector, options);
+  }
+
+  static async #prepare(page: Page) {
+    await page
+      .exposeFunction('customQuerySelectorAll_aria', ARIAQueryHandler.queryAll)
+      .catch(noop);
+    for (const [name, handler] of customQueryHandlers) {
+      await page
+        .evaluateOnNewDocument(
+          (name, functionText) => {
+            Object.assign(window, {
+              [`customQuerySelectorAll_${name}`]: new Function(
+                `return ${functionText}`
+              )(),
+            });
+          },
+          name,
+          handler._querySelectorAll.toString()
+        )
+        .catch(noop);
+    }
   }
 }
