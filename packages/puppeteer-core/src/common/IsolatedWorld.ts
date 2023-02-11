@@ -435,18 +435,52 @@ export class IsolatedWorld {
       if (!fn) {
         throw new Error(`Bound function $name is not found`);
       }
-      const result = await fn(...args);
-      await context.evaluate(
-        (name: string, seq: number, result: unknown) => {
+
+      // Getting non-trivial arguments.
+      const handles = await context.evaluateHandle(
+        (name: string, seq: number) => {
           // @ts-expect-error Code is evaluated in a different context.
-          const callbacks = self[name].callbacks;
-          callbacks.get(seq).resolve(result);
-          callbacks.delete(seq);
+          return globalThis[name].args.get(seq);
         },
         name,
-        seq,
-        result
+        seq
       );
+      try {
+        const properties = await handles.getProperties();
+        for (const [index, handle] of properties) {
+          // This is not straight-forward since some arguments can stringify, but
+          // aren't plain objects so add subtypes when the use-case arises.
+          if (index in args) {
+            switch (handle.remoteObject().subtype) {
+              case 'node':
+                args[+index] = handle;
+                break;
+            }
+          }
+        }
+
+        try {
+          const result = await fn(...args);
+
+          await context.evaluate(
+            (name: string, seq: number, result: unknown) => {
+              // @ts-expect-error Code is evaluated in a different context.
+              const callbacks = globalThis[name].callbacks;
+              callbacks.get(seq).resolve(result);
+              callbacks.delete(seq);
+            },
+            name,
+            seq,
+            result
+          );
+        } finally {
+          for (const [, handle] of properties) {
+            await handle.dispose();
+          }
+        }
+      } finally {
+        await handles.dispose();
+      }
     } catch (error) {
       // The WaitTask may already have been resolved by timing out, or the
       // execution context may have been destroyed.

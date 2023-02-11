@@ -274,20 +274,34 @@ export function pageBindingInitString(type: string, name: string): string {
   function addPageBinding(type: string, name: string): void {
     // This is the CDP binding.
     // @ts-expect-error: In a different context.
-    const callCDP = self[name];
+    const callCDP = globalThis[name];
 
     // We replace the CDP binding with a Puppeteer binding.
-    Object.assign(self, {
+    Object.assign(globalThis, {
       [name](...args: unknown[]): Promise<unknown> {
         // This is the Puppeteer binding.
         // @ts-expect-error: In a different context.
-        const callPuppeteer = self[name];
+        const callPuppeteer = globalThis[name];
+        callPuppeteer.args ??= new Map();
         callPuppeteer.callbacks ??= new Map();
+
         const seq = (callPuppeteer.lastSeq ?? 0) + 1;
         callPuppeteer.lastSeq = seq;
+        callPuppeteer.args.set(seq, args);
+
         callCDP(JSON.stringify({type, name, seq, args}));
+
         return new Promise((resolve, reject) => {
-          callPuppeteer.callbacks.set(seq, {resolve, reject});
+          callPuppeteer.callbacks.set(seq, {
+            resolve(value: unknown) {
+              callPuppeteer.args.delete(seq);
+              resolve(value);
+            },
+            reject(value?: unknown) {
+              callPuppeteer.args.delete(seq);
+              reject(value);
+            },
+          });
         });
       },
     });
