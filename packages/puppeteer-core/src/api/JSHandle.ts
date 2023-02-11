@@ -86,7 +86,10 @@ export class JSHandle<T = unknown> {
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
+  ): // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore-error Circularity here is okay because we only need the return
+  // type which doesn't use `this`.
+  Promise<Awaited<ReturnType<Func>>>;
   async evaluate<
     Params extends unknown[],
     Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<
@@ -108,7 +111,10 @@ export class JSHandle<T = unknown> {
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
+  ): // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore-error Circularity here is okay because we only need the return
+  // type which doesn't use `this`.
+  Promise<HandleFor<Awaited<ReturnType<Func>>>>;
   async evaluateHandle<
     Params extends unknown[],
     Func extends EvaluateFunc<[this, ...Params]> = EvaluateFunc<

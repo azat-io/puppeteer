@@ -15,10 +15,10 @@
  */
 
 import {Protocol} from 'devtools-protocol';
-import {assert} from '../util/assert.js';
+import {ElementHandle} from '../api/ElementHandle.js';
+import {Page} from '../api/Page.js';
 import {isErrorLike} from '../util/ErrorLike.js';
 import {CDPSession} from './Connection.js';
-import {ElementHandle} from '../api/ElementHandle.js';
 import {ExecutionContext} from './ExecutionContext.js';
 import {FrameManager} from './FrameManager.js';
 import {HTTPResponse} from './HTTPResponse.js';
@@ -29,12 +29,11 @@ import {
   WaitForSelectorOptions,
 } from './IsolatedWorld.js';
 import {MAIN_WORLD, PUPPETEER_WORLD} from './IsolatedWorlds.js';
+import {LazyArg} from './LazyArg.js';
 import {LifecycleWatcher, PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
-import {Page} from '../api/Page.js';
-import {getQueryHandlerAndSelector} from './QueryHandler.js';
+import {getQueryHandlerAndSelector} from './GetQueryHandler.js';
 import {EvaluateFunc, HandleFor, NodeFor} from './types.js';
 import {importFS} from './util.js';
-import {LazyArg} from './LazyArg.js';
 
 /**
  * @public
@@ -618,7 +617,6 @@ export class Frame {
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
     const {updatedSelector, queryHandler} =
       getQueryHandlerAndSelector(selector);
-    assert(queryHandler.waitFor, 'Query handler does not support waiting');
     return (await queryHandler.waitFor(
       this,
       updatedSelector,
